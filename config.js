@@ -6,11 +6,13 @@ const encodedCredentials = Buffer.from(`${API_USERNAME}:${API_PASSWORD}`).toStri
 // הגדרת הכותרות עבור קריאת ה-API
 module.exports = {
      headersXML :{
+        'User-Agent': 'MyBlueSnapApp/1.0',  // Use a generic name and version number
         'Authorization': `Basic ${encodedCredentials}`,
         'Content-Type': 'application/xml',
         'Accept': 'application/xml'
     },
      headers : {
+        'User-Agent': 'MyBlueSnapApp/1.0',  // Use a generic name and version number
         'Authorization': `Basic ${encodedCredentials}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'

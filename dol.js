@@ -16,7 +16,19 @@ async function createPlan(plan, res) {
         res.status(500).json({ error: 'An error occurred while creating the plan.' });
     }
 }
+async function getToken(req, res) {
 
+    try {
+        const response = await axios.get('https://sandbox.bluesnap.com/services/2/payment-fields-tokens', {
+            headers, withCredentials: true
+        });
+        console.log(response.data);
+        res.json(response.data);
+    } catch (error) {
+        console.error('Error creating plan:', error.response ? error.response.data : error.message);
+        res.status(500).json({ error: 'An error occurred while creating the plan.' });
+    }
+}
 async function createSubscription(subscription, res) {
 
     try {
@@ -127,5 +139,6 @@ module.exports = {
     createSubscription,
     getSubscription,
     getAllPlans,
-    getMonthlyPayments
+    getMonthlyPayments,
+    getToken
 };
