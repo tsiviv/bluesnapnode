@@ -4,10 +4,11 @@ const routes = require('./routes');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const httpProxy = require('http-proxy');
-
+const helmet = require('helmet'); // Helmet middleware for security headers
 const app = express();
 const proxy = httpProxy.createProxyServer();
 const API_BASE_URL = 'https://sandbox.bluesnap.com';
+const crypto = require('crypto');
 
 const port = process.env.PORT || 8080;
 
@@ -22,38 +23,50 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 app.use(cookieParser());
+app.set('view engine', 'ejs');
 
-// Middleware to set a cookie
+// Route to render your HTML template with nonce
+app.get('/', (req, res) => {
+  const nonce = generateNonce();
+  res.render('index', { nonce });
+});
+
+// Generate nonce
+function generateNonce() {
+  return crypto.randomBytes(16).toString('base64');
+}
+// Middleware to set CSP headers
 app.use((req, res, next) => {
-    res.cookie('exampleCookie', 'cookieValue', {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'Lax'
-    });
-    next();
+  const nonce = generateNonce();
+  res.locals.nonce = nonce;
+  res.setHeader(
+    'Content-Security-Policy',
+    `script-src 'self' 'nonce-${nonce}' *.cardinalcommerce.com *.kaptcha.com *.sentry.io google.com *.google.com *.gstatic.com static.cloudflareinsights.com cdnjs.cloudflare.com; frame-src 'self' sandbox.bluesnap.com sandbox1.bluesnap.com sandbox2.bluesnap.com *.cardinalcommerce.com *.kaptcha.com *.sentry.io google.com *.google.com;`
+  );
+  next();
 });
-app.use('/', (req, res) => {
-    proxy.web(req, res, {
-        target: API_BASE_URL,
-        changeOrigin: true, 
-        headers: {
-            'Host': 'sandbox.bluesnap.com',
-            // Additional headers as needed
-        }
-        , secure: false
 
-    });
-});
-// Routes
+
+
 app.use('/api', routes);
 
-// Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).send('Something broke!');
 });
 
-// Start server
+app.use(
+    helmet.contentSecurityPolicy({
+      useDefaults: true,
+      directives: {
+        "script-src": ["'self'", "https://sandbox.bluesnap.com", "https://netfree.link"],
+        "object-src": ["'self'"],
+        // Add more directives as needed
+      },
+    })
+  );
+
+
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
