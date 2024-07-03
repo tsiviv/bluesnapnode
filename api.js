@@ -5,12 +5,16 @@ const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const httpProxy = require('http-proxy');
 const helmet = require('helmet'); // Helmet middleware for security headers
+const https = require('https'); // Require HTTPS module
+const fs = require('fs'); // Require File System module
+const crypto = require('crypto');
+
 const app = express();
 const proxy = httpProxy.createProxyServer();
 const API_BASE_URL = 'https://sandbox.bluesnap.com';
-const crypto = require('crypto');
 
-const port = process.env.PORT || 8080;
+
+const port = process.env.PORT || 443;
 
 // CORS configuration
 const corsOptions = {
@@ -18,6 +22,10 @@ const corsOptions = {
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization']
+};
+const options = {
+  key: fs.readFileSync('./server.key'),
+  cert: fs.readFileSync('./server.crt')
 };
 
 app.use(cors(corsOptions));
@@ -35,6 +43,7 @@ app.get('/', (req, res) => {
 function generateNonce() {
   return crypto.randomBytes(16).toString('base64');
 }
+
 // Middleware to set CSP headers
 app.use((req, res, next) => {
   const nonce = generateNonce();
@@ -46,8 +55,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 app.use('/api', routes);
 
 app.use((err, req, res, next) => {
@@ -56,17 +63,21 @@ app.use((err, req, res, next) => {
 });
 
 app.use(
-    helmet.contentSecurityPolicy({
-      useDefaults: true,
-      directives: {
-        "script-src": ["'self'", "https://sandbox.bluesnap.com", "https://netfree.link"],
-        "object-src": ["'self'"],
-        // Add more directives as needed
-      },
-    })
-  );
+  helmet.contentSecurityPolicy({
+    useDefaults: true,
+    directives: {
+      "script-src": ["'self'", "'nonce-${nonce}'", "*.cardinalcommerce.com", "*.kaptcha.com", "*.sentry.io", "google.com", "*.google.com", "*.gstatic.com", "static.cloudflareinsights.com", "cdnjs.cloudflare.com", "sandbox.bluesnap.com", "sandbox1.bluesnap.com", "sandbox2.bluesnap.com"],
+      "frame-src": ["'self'", "*.cardinalcommerce.com", "*.kaptcha.com", "*.sentry.io", "google.com", "*.google.com", "sandbox.bluesnap.com", "sandbox1.bluesnap.com", "sandbox2.bluesnap.com"]
+      // Add more directives as needed
+    },
+  })
+);
 
 
-app.listen(port, () => {
+// Start HTTPS server
+https.createServer(options, app).listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
+
+
+
