@@ -24,8 +24,9 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 const options = {
-  key: fs.readFileSync('./server.key'),
-  cert: fs.readFileSync('./server.crt')
+  key: fs.readFileSync('./key.pem'),
+  cert: fs.readFileSync('./cert.pem'),
+  
 };
 
 app.use(cors(corsOptions));
@@ -63,16 +64,15 @@ app.use((err, req, res, next) => {
 });
 
 app.use(
-  helmet.contentSecurityPolicy({
-    useDefaults: true,
-    directives: {
-      "script-src": ["'self'", "'nonce-${nonce}'", "*.cardinalcommerce.com", "*.kaptcha.com", "*.sentry.io", "google.com", "*.google.com", "*.gstatic.com", "static.cloudflareinsights.com", "cdnjs.cloudflare.com", "sandbox.bluesnap.com", "sandbox1.bluesnap.com", "sandbox2.bluesnap.com"],
-      "frame-src": ["'self'", "*.cardinalcommerce.com", "*.kaptcha.com", "*.sentry.io", "google.com", "*.google.com", "sandbox.bluesnap.com", "sandbox1.bluesnap.com", "sandbox2.bluesnap.com"]
-      // Add more directives as needed
-    },
-  })
-);
-
+    helmet.contentSecurityPolicy({
+      useDefaults: true,
+      directives: {
+        "script-src": ["'self'", "https://sandbox.bluesnap.com", "https://netfree.link"],
+        "object-src": ["'self'"],
+        // Add more directives as needed
+      },
+    })
+  );
 
 // Start HTTPS server
 https.createServer(options, app).listen(port, () => {
