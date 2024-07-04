@@ -4,11 +4,15 @@ var express = require('express');
 
 var bodyParser = require('body-parser');
 
-var routes = require('./routes');
+var routes = require('../routes');
 
 var cors = require('cors');
 
 var cookieParser = require('cookie-parser');
+
+var http = require('http')
+
+var fs = require('fs')
 
 var httpProxy = require('http-proxy');
 
@@ -65,6 +69,12 @@ app.use(helmet.contentSecurityPolicy({
 
   }
 }));
-app.listen(port, function () {
+
+const httpsOptions = {
+  cert: fs.readFileSync('./localhost_cert.pem'), //where the pem files are?
+  key: fs.readFileSync('./localhost_key.pem')   //where the pem files are?
+}
+
+http.createServer(httpsOptions,app).listen(port, function () {
   console.log("Server is running on port ".concat(port));
 });
