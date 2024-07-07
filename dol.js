@@ -1,12 +1,23 @@
 const axios = require('axios');
 const { headers, headersXML } = require('./config');
 const { parseString } = require('xml2js');
-
+const https = require('https')
+const fs =require('fs')
+const axiosInstance = axios.create({
+    baseURL: 'https://sandbox.bluesnap.com', // Replace with your server's base URL
+    timeout: 5000, // Timeout in milliseconds
+    withCredentials: true, // Include cookies in CORS requests
+    httpsAgent: new https.Agent({
+        ca: [
+            fs.readFileSync('./netfree-ca.crt'),
+        ]
+    })
+  });
 async function createPlan(plan, res) {
     console.log(plan)
 
     try {
-        const response = await axios.post('https://sandbox.bluesnap.com/services/2/recurring/plans', plan, {
+        const response = await axiosInstance.post('/services/2/recurring/plans', plan, {
             headers
         });
         console.log(response.data);
@@ -19,7 +30,7 @@ async function createPlan(plan, res) {
 async function getToken(req, res) {
     console.log("D")
     try {
-        const response = await axios.post('https://sandbox.bluesnap.com/services/2/payment-fields-tokens', {}, {
+        const response = await axiosInstance.post('/services/2/payment-fields-tokens', {}, {
             headers
         });
         const locationHeader = response.headers['location'];
@@ -35,7 +46,7 @@ async function getToken(req, res) {
 async function createSubscription(subscription, res) {
 console.log(subscription)
     try {
-        const response = await axios.post('https://sandbox.bluesnap.com/services/2/recurring/subscriptions', subscription, { headers });
+        const response = await axiosInstance.post('/services/2/recurring/subscriptions', subscription, { headers });
         console.log(response.data);
         res.json(response.data);
     } catch (error) {
@@ -48,7 +59,7 @@ async function getSubscription(subscription, res) {
     console.log(subscription)
 
     try {
-        const response = await axios.get(`https://sandbox.bluesnap.com/services/2/recurring/subscriptions/${subscription.subscriptionId}`, { headers });
+        const response = await axiosInstance.get(`/services/2/recurring/subscriptions/${subscription.subscriptionId}`, { headers });
         console.log(response.data);
         res.json(response.data);
     } catch (error) {
@@ -61,7 +72,7 @@ async function getAllPlans(res) {
     console.log("Dfdg");
 
     try {
-        const response = await axios.get('https://sandbox.bluesnap.com/services/2/recurring/plans?pagesize=5&after=2185254&gettotal=true&fulldescription=true', { headers });
+        const response = await axiosInstance.get('/services/2/recurring/plans?pagesize=5&after=2185254&gettotal=true&fulldescription=true', { headers });
         if (!response.data.plans) {
             response.data.plans = []; // Initialize plans as an empty array
         }
@@ -75,7 +86,7 @@ async function getAllPlans(res) {
 const getMonthlyPayments = async (subscriptionId, res) => {
     const headers = headersXML;
     try {
-        const response = await axios.get(`https://sandbox.bluesnap.com/services/2/orders/resolve?subscriptionid=${subscriptionId.subscriptionId}`, { headers });
+        const response = await axiosInstance.get(`/services/2/orders/resolve?subscriptionid=${subscriptionId.subscriptionId}`, { headers });
         const xmlData = response.data;
 
         // Parse XML to JSON
